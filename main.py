@@ -4,7 +4,7 @@ import numpy as np
 import logging
 import Solicitud
 
-from telegram import Update, ForceReply
+from telegram import Update, ForceReply, ReplyKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
 logging.basicConfig(
@@ -108,6 +108,16 @@ def obtain():
     Lits = get_data_querys()
     return Lits
 
+def reporte (update: Update, context: CallbackContext)-> str:
+    """Send a message when the command /reporte is issued."""
+    reply_keyboard = [['/Semanal', '/Mensual']]
+    update.message.reply_text(
+        'De cuanto tiempo te gustaria tu reporte?'
+        'Semanal o Mensual',
+        reply_markup = ReplyKeyboardMarkup(
+            reply_keyboard, one_time_keyboard=True, input_field_placeholder='/Semana or /Mensual?'
+        ),
+    )
 
 def sema_command(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /help is issued."""
@@ -147,8 +157,9 @@ def main() -> None:
 
     # on different commands - answer in Telegram
     dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(CommandHandler("semana", sema_command))
+    dispatcher.add_handler(CommandHandler("semanal", sema_command))
     dispatcher.add_handler(CommandHandler("mensual", mes_command))
+    updater.dispatcher.add_handler(CommandHandler('reporte', reporte))
 
     # on non command i.e message - echo the message on Telegram
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
