@@ -1,4 +1,4 @@
-import random
+
 import influxdb_client
 import numpy as np
 
@@ -38,7 +38,7 @@ def get_data_querys(query_info):
                 aux2 = 1
     ar_li = np.asarray(arr_tiempo).reshape(1, -1)
     if aux == 1:  # para  Tiempo
-        valor = (sumValues(ar_li))/60
+        valor = round((sumValues(ar_li))/60, 2)
     elif aux1 == 1:  # para Litros
         valor = sumValues(ar_li)
     elif aux2 == 1:  # para Temperatura
