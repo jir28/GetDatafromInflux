@@ -4,10 +4,7 @@ import numpy as np
 
 
 def sumValues(array_Lits):
-    sumTim = round((np.sum(array_Lits) / 60), 2)
-    print(sumTim)
-    return sumTim
-
+    return round((np.sum(array_Lits)), 2)
 
 def promT(arrTem):
     return np.mean(arrTem)
@@ -27,23 +24,24 @@ def get_data_querys(query_info):
     query_T = query_info
     aux = 0
     aux1 = 0
+    aux2 = 0
     result1 = query_api.query(org=org, query=query_T)
     arr_tiempo = []
-    aux_Litus = []
-    auxCel = []
     for table in result1:
         for record in table.records:
             arr_tiempo.append((record.get_value()))
-            if record.get_field() == 'Segundos' or record.get_field() == 'Litros' and aux == 0:
+            if record.get_field() == 'Segundos' and aux == 0:
                 aux = 1
-                aux_Litus.append((record.get_field()))
-            elif record.get_field() == 'Celsius' and aux1 == 0:
+            elif record.get_field() == 'Litros' and aux1 == 0:
                 aux1 = 1
-                auxCel.append((record.get_field()))
+            elif record.get_field() == 'Celsius' and aux2 == 0:
+                aux2 = 1
     ar_li = np.asarray(arr_tiempo).reshape(1, -1)
-    if aux_Litus:
+    if aux == 1:  # para  Tiempo
+        valor = (sumValues(ar_li))/60
+    elif aux1 == 1:  # para Litros
         valor = sumValues(ar_li)
-    elif auxCel:
+    elif aux2 == 1:  # para Temperatura
         valor = promT(ar_li)
 
     return valor
@@ -88,5 +86,3 @@ tempes = get_data_querys(queryTemp)
 print("Litros de baño : ", Lits)
 print("Minutos de baño : ", tiempos)
 print("TempProm de baño : ", tempes)
-
-# obtain()
