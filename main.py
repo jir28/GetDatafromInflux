@@ -1,16 +1,58 @@
-
+import time
 import influxdb_client
 import numpy as np
+import logging
+import Solicitud
 
+from telegram import Update, ForceReply
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
+)
+
+logger = logging.getLogger(__name__)
+
+global queryTemp, queryLiters, queryTime, queryTemp7, queryLiters7, queryTime7
+queryTemp = ' from(bucket:"ShowerS")\
+       |> range(start: -30d)\
+       |> filter(fn:(r) => r._measurement == "TemperaturaProm")\
+       |> filter(fn:(r) => r._field == "Celsius" ) '
+
+queryLiters = ' from(bucket:"ShowerS")\
+            |> range(start: -30d)\
+            |> filter(fn:(r) => r._measurement == "Litros")\
+            |> filter(fn:(r) => r._field == "Litros" ) '
+
+queryTime = ' from(bucket:"ShowerS")\
+        |> range(start: -30d)\
+        |> filter(fn:(r) => r._measurement == "Tiempo")\
+        |> filter(fn:(r) => r._field == "Segundos" ) '
+
+queryTemp7 = ' from(bucket:"ShowerS")\
+       |> range(start: -7d)\
+       |> filter(fn:(r) => r._measurement == "TemperaturaProm")\
+       |> filter(fn:(r) => r._field == "Celsius" ) '
+
+queryLiters7 = ' from(bucket:"ShowerS")\
+            |> range(start: -7d)\
+            |> filter(fn:(r) => r._measurement == "Litros")\
+            |> filter(fn:(r) => r._field == "Litros" ) '
+
+queryTime7 = ' from(bucket:"ShowerS")\
+            |> range(start: -7d)\
+            |> filter(fn:(r) => r._measurement == "Tiempo")\
+            |> filter(fn:(r) => r._field == "Segundos" ) '
 
 def sumValues(array_Lits):
     return round((np.sum(array_Lits)), 2)
+
 
 def promT(arrTem):
     return np.mean(arrTem)
 
 
-def get_data_querys(query_info):
+def get_data_querys():
     org = "jirs28"
     token = "CogeqAhxfHt5o-0rkeCtKiMxyhXMjJaqugbHUN_LisF7cvH9LaIyDvFAZfU5CEDVrFkiYeh_69_TQ-NKUsKCeg=="
     url = "https://us-east-1-1.aws.cloud2.influxdata.com"
@@ -21,7 +63,10 @@ def get_data_querys(query_info):
         org=org
     )
     query_api = client.query_api()
-    query_T = query_info
+    query_T = ' from(bucket:"ShowerS")\
+            |> range(start: -30d)\
+            |> filter(fn:(r) => r._measurement == "Litros")\
+            |> filter(fn:(r) => r._field == "Litros" ) '
     aux = 0
     aux1 = 0
     aux2 = 0
@@ -36,9 +81,10 @@ def get_data_querys(query_info):
                 aux1 = 1
             elif record.get_field() == 'Celsius' and aux2 == 0:
                 aux2 = 1
+    client.close()
     ar_li = np.asarray(arr_tiempo).reshape(1, -1)
     if aux == 1:  # para  Tiempo
-        valor = round((sumValues(ar_li))/60, 2)
+        valor = round((sumValues(ar_li)) / 60, 2)
     elif aux1 == 1:  # para Litros
         valor = sumValues(ar_li)
     elif aux2 == 1:  # para Temperatura
@@ -47,42 +93,74 @@ def get_data_querys(query_info):
     return valor
 
 
-# Tiempos para 30 dias
-queryTemp = ' from(bucket:"ShowerS")\
-       |> range(start: -30d)\
-       |> filter(fn:(r) => r._measurement == "TemperaturaProm")\
-       |> filter(fn:(r) => r._field == "Celsius" ) '
-queryLiters = ' from(bucket:"ShowerS")\
-            |> range(start: -30d)\
-            |> filter(fn:(r) => r._measurement == "Litros")\
-            |> filter(fn:(r) => r._field == "Litros" ) '
+# Define a few command handlers. These usually take the two arguments update and
+# context.
+def start(update: Update, context: CallbackContext) -> None:
+    """Send a message when the command /start is issued."""
+    user = update.effective_user
+    update.message.reply_markdown_v2(
+        fr'Hi {user.mention_markdown_v2()}\!',
+        reply_markup=ForceReply(selective=True),
+    )
 
-queryTime = ' from(bucket:"ShowerS")\
-        |> range(start: -30d)\
-        |> filter(fn:(r) => r._measurement == "Tiempo")\
-        |> filter(fn:(r) => r._field == "Segundos" ) '
 
-#####################
-# Tiempos para una semana
-queryTemp7 = ' from(bucket:"ShowerS")\
-       |> range(start: -7d, stop: now)\
-       |> filter(fn:(r) => r._measurement == "TemperaturaProm")\
-       |> filter(fn:(r) => r._field == "Celsius" ) '
+def obtain():
+    Lits = get_data_querys()
+    return Lits
 
-queryLiters7 = ' from(bucket:"ShowerS")\
-            |> range(start: -7d, stop: now)\
-            |> filter(fn:(r) => r._measurement == "Litros")\
-            |> filter(fn:(r) => r._field == "Litros" ) '
 
-queryTime7 = ' from(bucket:"ShowerS")\
-        |> range(start: -7d, stop: now)\
-        |> filter(fn:(r) => r._measurement == "Tiempo")\
-        |> filter(fn:(r) => r._field == "Segundos" ) '
+def sema_command(update: Update, context: CallbackContext) -> None:
+    """Send a message when the command /help is issued."""
 
-Lits = get_data_querys(queryLiters)
-tiempos = get_data_querys(queryTime)
-tempes = get_data_querys(queryTemp)
-# promTim = round((np.sum(Tim))/60, 2)
-print("Litros de baño : ", Lits)
-print("Minutos de baño : ", tiempos)
-print("TempProm de baño : ", tempes)
+
+    Liters = Solicitud.get_data_querys(queryLiters7)
+    temp = Solicitud.get_data_querys(queryTemp7)
+    tiempotot = Solicitud.get_data_querys(queryTime7)
+    update.message.reply_text('Litros gastados: ' + str(Liters))
+    update.message.reply_text('Temperatura promedio: ' + str(temp))
+    update.message.reply_text('Tiempo total de baño: ' + str(tiempotot))
+
+
+def mes_command(update: Update, context: CallbackContext) -> None:
+    """Send a message when the command /help is issued."""
+
+    Liters = Solicitud.get_data_querys(queryLiters)
+    temp = Solicitud.get_data_querys(queryTemp)
+    tiempotot = Solicitud.get_data_querys(queryTime)
+    update.message.reply_text('Litros gastados: ' + str(Liters))
+    update.message.reply_text('Temperatura promedio: ' + str(temp))
+    update.message.reply_text('Tiempo total de baño: ' + str(tiempotot))
+
+
+def echo(update: Update, context: CallbackContext) -> None:
+    """Echo the user message."""
+    update.message.reply_text(update.message.text)
+
+
+def main() -> None:
+    """Start the bot."""
+    # Create the Updater and pass it your bot's token.
+    updater = Updater("5225831499:AAH-0_bNem_7_fhM0exw1Mx_tWozVVjlU64")
+
+    # Get the dispatcher to register handlers
+    dispatcher = updater.dispatcher
+
+    # on different commands - answer in Telegram
+    dispatcher.add_handler(CommandHandler("start", start))
+    dispatcher.add_handler(CommandHandler("semana", sema_command))
+    dispatcher.add_handler(CommandHandler("mensual", mes_command))
+
+    # on non command i.e message - echo the message on Telegram
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
+
+    # Start the Bot
+    updater.start_polling()
+
+    # Run the bot until you press Ctrl-C or the process receives SIGINT,
+    # SIGTERM or SIGABRT. This should be used most of the time, since
+    # start_polling() is non-blocking and will stop the bot gracefully.
+    updater.idle()
+
+
+if __name__ == '__main__':
+    main()
