@@ -93,8 +93,7 @@ def get_data_querys():
     return valor
 
 
-# Define a few command handlers. These usually take the two arguments update and
-# context.
+#Definimos los comandos a utilizar y sus palabras clave
 def start(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /start is issued."""
     user = update.effective_user
@@ -107,10 +106,10 @@ def start(update: Update, context: CallbackContext) -> None:
 def obtain():
     Lits = get_data_querys()
     return Lits
-
+#Cuando el usario pide /reporte
 def reporte (update: Update, context: CallbackContext)-> str:
     """Send a message when the command /reporte is issued."""
-    reply_keyboard = [['/Semanal', '/Mensual']]
+    reply_keyboard = [['/Semanal', '/Mensual']]#modificamos el teclado para que sólo haya dos opciones
     update.message.reply_text(
         'De cuanto tiempo te gustaria tu reporte?'
         'Semanal o Mensual',
@@ -118,19 +117,19 @@ def reporte (update: Update, context: CallbackContext)-> str:
             reply_keyboard, one_time_keyboard=True, input_field_placeholder='/Semana or /Mensual?'
         ),
     )
-
+#Mensaje si el usario pide semanal
 def sema_command(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /help is issued."""
 
 
-    Liters = Solicitud.get_data_querys(queryLiters7)
+    Liters = Solicitud.get_data_querys(queryLiters7)#El 7 diferencia entre ultimos 7 o 30 días
     temp = Solicitud.get_data_querys(queryTemp7)
     tiempotot = Solicitud.get_data_querys(queryTime7)
     update.message.reply_text('Litros gastados: ' + str(Liters))
     update.message.reply_text('Temperatura promedio: ' + str(temp))
     update.message.reply_text('Tiempo total de baño: ' + str(tiempotot))
 
-
+#La función del mes
 def mes_command(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /help is issued."""
 
@@ -141,7 +140,7 @@ def mes_command(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Temperatura promedio: ' + str(temp))
     update.message.reply_text('Tiempo total de baño: ' + str(tiempotot))
 
-
+#Nos ayuda a verificar que el bot funcione
 def echo(update: Update, context: CallbackContext) -> None:
     """Echo the user message."""
     update.message.reply_text(update.message.text)
@@ -149,29 +148,27 @@ def echo(update: Update, context: CallbackContext) -> None:
 
 def main() -> None:
     """Start the bot."""
-    # Create the Updater and pass it your bot's token.
+    # Actualiza el bot
     updater = Updater("5225831499:AAH-0_bNem_7_fhM0exw1Mx_tWozVVjlU64")
 
-    # Get the dispatcher to register handlers
+    # Servicio de envío
     dispatcher = updater.dispatcher
 
-    # on different commands - answer in Telegram
+    # Definimos los diversos comandos
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(CommandHandler("semanal", sema_command))
     dispatcher.add_handler(CommandHandler("mensual", mes_command))
     updater.dispatcher.add_handler(CommandHandler('reporte', reporte))
 
-    # on non command i.e message - echo the message on Telegram
+    # Hace echo de lo que envías
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
 
-    # Start the Bot
+    # Empieza el bot
     updater.start_polling()
 
-    # Run the bot until you press Ctrl-C or the process receives SIGINT,
-    # SIGTERM or SIGABRT. This should be used most of the time, since
-    # start_polling() is non-blocking and will stop the bot gracefully.
+    #El bot corre hasta que se haga Ctrl C
     updater.idle()
 
-
+#Siempre corre
 if __name__ == '__main__':
     main()
